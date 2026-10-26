@@ -1,0 +1,9 @@
+[
+    {
+        "id": 1,
+        "username": "Samuel",
+        "title": "Test",
+        "duration": 5,
+        "status": "completada"
+    }
+]
