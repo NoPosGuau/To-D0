@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard de Productividad</title>
+    <style>
+        /* Variables de color generales */
+        :root { --bg: #f8fafc; --surface: #ffffff; --primary: #3b82f6; --success: #10b981; --danger: #ef4444; }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 30px; }
+        
+        /* Barra de navegación superior */
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        
+        /* Título recuperado */
+        .header-title { text-align: center; margin-bottom: 30px; }
+        .header-title h1 { margin: 0; color: #1e293b; font-size: 2em; }
+        .header-title p { color: #64748b; margin-top: 5px; }
+
+        /* Caja para agregar tareas */
+        .form-container { background: white; padding: 20px; border-radius: 10px; display: flex; gap: 10px; margin-bottom: 30px; }
+        input { padding: 10px; border: 1px solid #ddd; border-radius: 5px; } input[type="text"] { flex: 2; }
+        button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        
+        /* Sistema Grid para acomodar las tareas en tarjetas una al lado de otra */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        
+        /* Estructura de cada tarjeta de tarea */
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid var(--primary); }
+        .card.completada { opacity: 0.6; border-left-color: var(--success); } /* Si está lista, se pone transparente y verde */
+        
+        /* Caja de la IA dentro de la tarjeta */
+        .ai-panel { background: #f1f5f9; padding: 10px; border-radius: 5px; font-size: 0.9em; margin: 10px 0; }
+        .toggle-btn { color: var(--primary); cursor: pointer; font-weight: bold; font-size: 0.85em; text-decoration: underline; margin-left: 10px; }
+        
+        /* Contador y Notificación emergente */
+        .timer { font-weight: bold; color: #ea580c; margin-top: 10px; }
+        a.btn { text-decoration: none; padding: 5px 10px; border-radius: 5px; font-size: 0.9em; color: white; }
+        .notification { display: none; position: fixed; top: 20px; right: 20px; background: var(--success); color: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); z-index: 1000; font-weight: bold; animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    </style>
+</head>
+<body>
+    <!-- Div que mostrará el mensaje flotante de notificación -->
+    <div id="notification" class="notification"></div>
+
+    <!-- Menú superior con saludo y botón de salir -->
+    <div class="nav">
+        <h2>Hola, {{ username }} 👋</h2>
+        <a href="/logout" class="btn" style="background: var(--danger);">Cerrar Sesión</a>
+    </div>
+
+    <!-- Título Principal -->
+    <div class="header-title">
+        <h1>🚀 Dashboard de Productividad</h1>
+        <p>Organiza tus tareas con asistencia de IA</p>
+    </div>
+
+    <!-- Formulario para mandar datos a Python (App.py) usando POST -->
+    <form class="form-container" action="/add" method="POST">
+        <input type="text" name="title" placeholder="Nueva tarea..." required>
+        <input type="number" name="duration" placeholder="Segundos" min="1" required>
+        <button type="submit">Agregar Tarea</button>
+    </form>
+
+    <!-- Contenedor general que acomoda todas las tarjetas -->
+    <div class="grid">
+        <!-- Bucle Jinja que repite este bloque por cada tarea en la base de datos -->
+        {% for task in tasks %}
+            <div class="card {{ task.status }}">
+                <!-- Título y botones de la tarea -->
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <strong>{{ task.title }}</strong>
+                    <div>
+                        <!-- Si no está completada, muestra el botón verde -->
+                        {% if task.status == 'pendiente' %} <a href="/complete/{{ task.id }}" class="btn" style="background: var(--success);">✓</a> {% endif %}
+                        <!-- Botón rojo para eliminar -->
+                        <a href="/delete/{{ task.id }}" class="btn" style="background: var(--danger);">✗</a>
+                    </div>
+                </div>
+                
+                <!-- Panel de la IA (Pasos sugeridos) -->
+                <div class="ai-panel">
+                    <strong>🤖 IA:</strong> 
+                    <!-- Botón "Ver más/Ver menos" que llama a la función JavaScript -->
+                    <span class="toggle-btn" onclick="toggleSteps(this)">Ver más ▼</span>
+                    <!-- Lista oculta por defecto (display: none) -->
+                    <ul style="display: none; padding-left: 20px; color: #555; margin-top: 10px;">
+                        {% for step in task.steps %} <li>{{ step }}</li> {% endfor %}
+                    </ul>
+                </div>
+                
+                <!-- Datos HTML invisibles (data-sec, data-status) que usa JavaScript para calcular el tiempo -->
+                <div class="timer" data-sec="{{ task.duration }}" data-status="{{ task.status }}" data-title="{{ task.title }}">
+                    {% if task.status == 'pendiente' %}⏳ <span class="reloj">{{ task.duration }} seg</span>{% else %}✅ Finalizada{% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        // 1. Función para mostrar u ocultar la lista de la IA
+        function toggleSteps(btn) {
+            let ul = btn.nextElementSibling; // Selecciona la lista (ul) que está junto al botón
+            if (ul.style.display === "none") {
+                ul.style.display = "block"; // La muestra
+                btn.textContent = "Ver menos ▲";
+            } else {
+                ul.style.display = "none"; // La oculta
+                btn.textContent = "Ver más ▼";
+            }
+        }
+
+        // 2. Función que activa el recuadro verde superior de notificación
+        function mostrarNotificacion(mensaje) {
+            const notif = document.getElementById('notification');
+            notif.textContent = mensaje;
+            notif.style.display = 'block';
+            setTimeout(() => notif.style.display = 'none', 5000); // Lo oculta tras 5 segundos
+        }
+
+        // 3. Lógica del Temporizador
+        document.querySelectorAll('.timer').forEach(timer => {
+            // Si la tarea está completada, no inicia el reloj
+            if (timer.getAttribute('data-status') === 'completada') return;
+            
+            // Extrae los datos desde el HTML
+            let seconds = parseInt(timer.getAttribute('data-sec'));
+            let title = timer.getAttribute('data-title');
+            let display = timer.querySelector('.reloj');
+            
+            // Crea un ciclo que se repite cada 1000ms (1 segundo)
+            let interval = setInterval(() => {
+                seconds--; // Resta un segundo
+                display.textContent = seconds + " seg";
+                
+                // Cuando llega a cero
+                if (seconds <= 0) {
+                    clearInterval(interval); // Detiene el contador
+                    display.textContent = "¡Tiempo agotado!";
+                    display.style.color = "red";
+                    mostrarNotificacion(`🔔 ¡Es hora de ejecutar: ${title}!`); // Llama la notificación
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><title>Login</title>
+<style>
+    /* Estilos básicos para centrar el formulario */
+    body { font-family: sans-serif; background: #f3f4f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    .box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 300px; text-align: center; }
+    input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
+    button { background: #3b82f6; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; }
+</style></head><body>
+    <div class="box">
+        <h2>Iniciar Sesión</h2>
+        <!-- Si hay error desde Python (credenciales malas), se muestra aquí -->
+        {% if error %}<p style="color: red; font-size: 0.9em;">{{ error }}</p>{% endif %}
+        
+        <!-- El método POST envía los datos de forma segura sin mostrarlos en la URL -->
+        <form method="POST">
+            <input type="text" name="username" placeholder="Usuario" required>
+            <input type="password" name="password" placeholder="Contraseña" required>
+            <button type="submit">Entrar</button>
+        </form>
+        <!-- Enlace hacia la página de registro -->
+        <p><a href="/register">Crear una cuenta nueva</a></p>
+    </div>
+</body></html>

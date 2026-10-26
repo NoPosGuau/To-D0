@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><title>Registro</title>
+<style>
+    /* Diseño igual al login pero con botón verde para diferenciar */
+    body { font-family: sans-serif; background: #f3f4f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    .box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 300px; text-align: center; }
+    input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
+    button { background: #10b981; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; }
+</style></head><body>
+    <div class="box">
+        <h2>Registro de Usuario</h2>
+        <!-- Aquí se muestra si el usuario ya existe -->
+        {% if error %}<p style="color: red; font-size: 0.9em;">{{ error }}</p>{% endif %}
+        
+        <form method="POST">
+            <input type="text" name="username" placeholder="Nuevo Usuario" required>
+            <input type="password" name="password" placeholder="Nueva Contraseña" required>
+            <button type="submit">Registrarme</button>
+        </form>
+        <p><a href="/login">Ya tengo cuenta</a></p>
+    </div>
+</body></html>
